@@ -21,9 +21,9 @@ app.post("/submit", (req, res) => {
 });
 
 /**
- * Checks the current status of a submitted job.
+ * Checks the current status of a submitted job and waits for the job to complete
  * @route GET /checkStatus?jobId=job:timestamp
- * @returns {string} Current progress percentage of the job
+ * @returns {string} Current the status once the progress is 100%
  */
 app.get("/checkStatus", async (req: Request, res: Response): Promise<void> => {
   const jobId = req.query.jobId as string;
@@ -54,6 +54,17 @@ function updateJob(jobId: string, progress: number) {
   }, 3000);
 }
 
+/**
+ * Asynchronously checks if a job with the given ID is complete.
+ *
+ * This function polls the `jobs` object to determine whether the job's progress
+ * has reached 100%. If it hasn't, it resolves `false` after a 1-second delay.
+ * If the job is already complete (i.e., progress is 100 or more), it resolves `true` immediately.
+ *
+ * @param {string} jobId - The unique identifier of the job to check.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the job is complete,
+ *                             or `false` if it is still in progress.
+ */
 async function checkJobComplete(jobId: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     if (jobs[jobId] < 100)
