@@ -1,5 +1,5 @@
 import express from "express";
-
+import { Request, Response } from "express";
 const app = express();
 
 /**
@@ -25,15 +25,16 @@ app.post("/submit", (req, res) => {
  * @route GET /checkStatus?jobId=job:timestamp
  * @returns {string} Current progress percentage of the job
  */
-app.get("/checkStatus", (req, res) => {
+app.get("/checkStatus", async (req: Request, res: Response): Promise<void> => {
   const jobId = req.query.jobId as string;
-
   if (!jobId || jobs[jobId] === undefined) {
-    return res.status(400).send("Invalid or unknown jobId\n");
+    res.status(400).send("Invalid or unknown jobId\n");
+    return;
   }
 
-  console.log(`[Status] ${jobId}: ${jobs[jobId]}%`);
-  res.end(`\nJobStatus: ${jobs[jobId]}%\n\n`);
+  while ((await checkJobComplete(jobId)) == false);
+
+  res.end(`\n\nJobStatus:Complete  ${jobs[jobId]}%\n\n`);
 });
 
 /**
@@ -51,6 +52,16 @@ function updateJob(jobId: string, progress: number) {
   setTimeout(() => {
     updateJob(jobId, progress + 10);
   }, 3000);
+}
+
+async function checkJobComplete(jobId: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    if (jobs[jobId] < 100)
+      setTimeout(() => {
+        resolve(false);
+      }, 1000);
+    else resolve(true);
+  });
 }
 
 // Start the Express server
